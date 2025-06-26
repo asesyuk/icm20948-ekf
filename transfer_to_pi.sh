@@ -107,6 +107,15 @@ scp icm20948_ekf.py ${PI_USER}@${PI_IP}:~/
 echo "31. Transferring EKF implementation guide..."
 scp ICM20948_EKF_GUIDE.md ${PI_USER}@${PI_IP}:~/
 
+echo "32. Transferring Euler angle unwrapping test..."
+scp test_euler_unwrapping.py ${PI_USER}@${PI_IP}:~/
+
+echo "33. Transferring Euler angle fix documentation..."
+scp EULER_ANGLE_FIX.md ${PI_USER}@${PI_IP}:~/
+
+echo "34. Transferring setup guide..."
+scp SETUP_GUIDE.md ${PI_USER}@${PI_IP}:~/
+
 echo ""
 echo "All files transferred! Now SSH to your Pi:"
 echo "ssh ${PI_USER}@${PI_IP}"
@@ -152,6 +161,7 @@ echo "    • Automatic gyroscope bias estimation"
 echo "    • Robust handling of sharp movements"
 echo "    • No manual resets required"
 echo "    • Real-time uncertainty quantification"
+echo "    • Euler angle unwrapping (fixes angle flipping)"
 echo ""
 echo "📖 SENSOR CLASS:"
 echo "➡️  python3 icm20948_ned_corrected.py            # 🆕 Corrected NED sensor interface"
@@ -178,6 +188,7 @@ echo "🎯 NEXT STEPS:"
 echo "   1. Run calibrate_raw_sensors.py (get calibration parameters)"
 echo "   2. Run orientation_from_calibrated_data.py (test orientation without EKF)"
 echo "   3. Run icm20948_ekf.py (FINAL: Complete EKF implementation!)"
+echo "   4. Run test_euler_unwrapping.py (test angle unwrapping after figure-8 movements)"
 echo ""
 echo "🎉 CONGRATULATIONS!"
 echo "   Your ICM20948 is now ready for professional-grade applications!"

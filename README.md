@@ -11,6 +11,7 @@ A **professional-grade Extended Kalman Filter implementation** for robust, real-
 - **✅ Complete 6-DOF orientation estimation** (roll, pitch, yaw + gyroscope bias estimation)
 - **✅ Automatic gyroscope bias correction** - no manual calibration needed
 - **✅ Robust handling of sharp movements** - no manual resets required
+- **✅ Euler angle unwrapping** - fixes angle flipping after complex movements
 - **✅ Real-time uncertainty quantification** - know how confident your estimates are
 - **✅ Professional sensor calibration** methodology with abnormality detection
 - **✅ NED coordinate system compliance** for aviation/robotics standards
@@ -25,6 +26,7 @@ Traditional gyroscope integration fails during **sharp movements** and accumulat
 |---------|---------------------|-------------------|
 | Sharp movements | ❌ Large errors, manual resets | ✅ Graceful handling |
 | Gyroscope drift | ❌ Accumulates over time | ✅ Automatically corrected |
+| Angle flipping | ❌ Stuck at ±180° after complex moves | ✅ Auto unwrapping to normal |
 | Sensor fusion | ❌ Simple averaging | ✅ Optimal weighting |
 | Uncertainty | ❌ Unknown reliability | ✅ Quantified confidence |
 | Maintenance | ❌ Requires intervention | ✅ Autonomous operation |
@@ -130,6 +132,7 @@ GYRO_INTEGRATION_IMPROVEMENTS.md   # Integration problem solutions
 ### **🔧 Testing & Utilities**
 ```
 check_icm20948_connection.py       # Basic connectivity test
+test_euler_unwrapping.py           # Euler angle unwrapping test
 debug_magnetometer.py              # Magnetometer diagnostics
 fix_magnetometer_continuous.py     # Magnetometer setup fix
 test_*_directions.py               # Sensor direction verification
@@ -235,6 +238,12 @@ python3 orientation_from_calibrated_data.py
 # Compare EKF with manual integration
 ```
 
+### **5. Euler Angle Unwrapping Test**
+```bash
+python3 test_euler_unwrapping.py
+# Test angle unwrapping after figure-8 movements
+```
+
 ## 🚨 **Troubleshooting**
 
 ### **Connection Issues**
@@ -260,6 +269,15 @@ python3 fix_magnetometer_continuous.py  # Fix magnetometer mode
 - **Biases don't converge**: Ensure sufficient motion during operation
 - **High uncertainty**: Normal during startup/motion, should decrease when stationary
 
+### **Angle Flipping Issues**
+```bash
+# If angles flip to ±180° after complex movements:
+python3 test_euler_unwrapping.py    # Test the unwrapping fix
+
+# The EKF should automatically unwrap flipped angles
+# Look for: 🔧 Euler angle unwrap: +179.6°,-179.7° → +0.4°,+0.3°
+```
+
 ## 🎯 **Coordinate System**
 
 This implementation uses **NED (North-East-Down) convention**:
@@ -280,6 +298,7 @@ Different sensors on the ICM20948 require different coordinate transformations:
 ## 📚 **Documentation**
 
 - **[ICM20948_EKF_GUIDE.md](ICM20948_EKF_GUIDE.md)** - Complete EKF implementation guide
+- **[EULER_ANGLE_FIX.md](EULER_ANGLE_FIX.md)** - Euler angle unwrapping solution
 - **[CALIBRATION_COORDINATE_SYSTEMS.md](CALIBRATION_COORDINATE_SYSTEMS.md)** - Critical calibration methodology
 - **[PROJECT_COMPLETION_SUMMARY.md](PROJECT_COMPLETION_SUMMARY.md)** - Full project journey
 - **[YAW_DIRECTION_FIX.md](YAW_DIRECTION_FIX.md)** - NED convention alignment
@@ -314,6 +333,7 @@ This EKF implementation is suitable for:
 ### **Key Algorithms**
 - **Euler angle integration** for orientation prediction
 - **Jacobian computation** for proper EKF linearization
+- **Euler angle unwrapping** for handling complex movements
 - **Tilt-compensated magnetometer** heading calculation
 - **Automatic bias estimation** for gyroscope drift correction
 
