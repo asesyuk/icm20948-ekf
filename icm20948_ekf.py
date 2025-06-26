@@ -252,6 +252,9 @@ class ICM20948_EKF:
         self.state[1] = self.normalize_angle(self.state[1])
         self.state[2] = self.normalize_angle(self.state[2])
         
+        # Fix Euler angle ambiguities (handles flipped angles after complex movements)
+        self.unwrap_euler_angles()
+        
         # Compute Jacobian of process model (F matrix)
         F = self.compute_process_jacobian(omega_x, omega_y, omega_z, dt)
         
@@ -344,6 +347,14 @@ class ICM20948_EKF:
         # State update
         self.state += K_accel @ y_accel
         
+        # Normalize angles after update
+        self.state[0] = self.normalize_angle(self.state[0])
+        self.state[1] = self.normalize_angle(self.state[1])
+        self.state[2] = self.normalize_angle(self.state[2])
+        
+        # Fix Euler angle ambiguities
+        self.unwrap_euler_angles()
+        
         # Covariance update
         I_KH = np.eye(6) - K_accel @ H_accel
         self.P = I_KH @ self.P @ I_KH.T + K_accel @ self.R_accel @ K_accel.T
@@ -411,6 +422,14 @@ class ICM20948_EKF:
         # State update
         self.state += K_yaw.flatten() * y_yaw
         
+        # Normalize angles after update
+        self.state[0] = self.normalize_angle(self.state[0])
+        self.state[1] = self.normalize_angle(self.state[1])
+        self.state[2] = self.normalize_angle(self.state[2])
+        
+        # Fix Euler angle ambiguities
+        self.unwrap_euler_angles()
+        
         # Covariance update
         I_KH = np.eye(6) - np.outer(K_yaw, H_yaw)
         self.P = I_KH @ self.P
@@ -422,6 +441,51 @@ class ICM20948_EKF:
         while angle < -math.pi:
             angle += 2 * math.pi
         return angle
+    
+    def unwrap_euler_angles(self):
+        """Fix Euler angle ambiguities after complex movements
+        
+        This resolves the issue where roll/pitch flip to ±180° representation
+        after figure-8 movements when the sensor should return to ~0°.
+        """
+        roll, pitch, yaw = self.state[0:3]
+        
+        # Threshold for detecting "flipped" angles (close to ±180°)
+        flip_threshold = math.radians(150)  # 150 degrees
+        
+        # Check if both roll and pitch are near ±180° (indicating a flip)
+        roll_flipped = abs(abs(roll) - math.pi) < math.radians(30)  # Within 30° of ±180°
+        pitch_flipped = abs(abs(pitch) - math.pi) < math.radians(30)  # Within 30° of ±180°
+        
+        if roll_flipped and pitch_flipped:
+            # This is likely a flipped Euler representation
+            # Convert to the "normal" representation
+            
+            # Method 1: Direct flip correction
+            if roll > 0:
+                self.state[0] = roll - math.pi  # +179° → -1°
+            else:
+                self.state[0] = roll + math.pi  # -179° → +1°
+                
+            if pitch > 0:
+                self.state[1] = pitch - math.pi  # +179° → -1°
+            else:
+                self.state[1] = pitch + math.pi  # -179° → +1°
+            
+            # Adjust yaw accordingly (yaw changes by 180° in flipped representation)
+            self.state[2] = self.normalize_angle(yaw + math.pi)
+            
+            # Re-normalize all angles
+            self.state[0] = self.normalize_angle(self.state[0])
+            self.state[1] = self.normalize_angle(self.state[1])
+            self.state[2] = self.normalize_angle(self.state[2])
+            
+            # Debug message (can be commented out for quiet operation)
+            print(f"\n🔧 Euler angle unwrap: {math.degrees(roll):+5.1f}°,{math.degrees(pitch):+5.1f}° → {math.degrees(self.state[0]):+5.1f}°,{math.degrees(self.state[1]):+5.1f}°")
+            
+            return True  # Indicate that unwrapping occurred
+        
+        return False  # No unwrapping needed
     
     def get_orientation_degrees(self):
         """Get current orientation estimate in degrees"""
